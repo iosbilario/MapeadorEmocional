@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 import sqlite3
 
 app = Flask(__name__)
@@ -11,7 +11,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS emotions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             emotion TEXT NOT NULL,
-            location TEXT NOT NULL
+            latitude REAL NOT NULL,
+            longitude REAL NOT NULL
         )
     ''')
     conn.commit()
@@ -19,44 +20,36 @@ def init_db():
 
 @app.route('/')
 def index():
-    return '''
-        <h1>Mapeador Emocional</h1>
-        <form method="POST" action="/submit">
-            <label for="emotion">Como você está se sentindo?</label>
-            <input type="text" id="emotion" name="emotion" required>
-            <br>
-            <label for="location">Sua localização:</label>
-            <input type="text" id="location" name="location" required>
-            <button type="submit">Enviar</button>
-        </form>
-    '''
+    # Garantir que markers seja sempre inicializado como uma lista vazia
+    return render_template('index.html', markers=[])
 
 @app.route('/submit', methods=['POST'])
 def submit():
     emotion = request.form['emotion']
-    location = request.form['location']
+    latitude = request.form['latitude']
+    longitude = request.form['longitude']
     
-    # Inserir dados no banco
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO emotions (emotion, location) VALUES (?, ?)', (emotion, location))
+    cursor.execute('INSERT INTO emotions (emotion, latitude, longitude) VALUES (?, ?, ?)', 
+                   (emotion, latitude, longitude))
     conn.commit()
     conn.close()
     
-    return f'<h1>Obrigado por compartilhar: {emotion} de {location}</h1>'
+    return redirect('/')
 
 @app.route('/emocoes')
 def emocoes():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT emotion, location FROM emotions')
+    cursor.execute('SELECT emotion, latitude, longitude FROM emotions')
     rows = cursor.fetchall()
     conn.close()
 
     if not rows:
         return '<h1>Nenhuma emoção foi registrada ainda.</h1><a href="/">Voltar para o início</a>'
     
-    formatted_emotions = ''.join([f'<li>{emotion} de {location}</li>' for emotion, location in rows])
+    formatted_emotions = ''.join([f'<li>{emotion} em [{latitude}, {longitude}]</li>' for emotion, latitude, longitude in rows])
     return f'''
         <h1>Emoções Coletadas</h1>
         <ul>
@@ -64,6 +57,17 @@ def emocoes():
         </ul>
         <a href="/">Voltar para o início</a>
     '''
+
+@app.route('/mapa')
+def mapa():
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT emotion, latitude, longitude FROM emotions')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    markers = [{'emotion': row[0], 'latitude': row[1], 'longitude': row[2]} for row in rows]
+    return render_template('index.html', markers=markers)
 
 if __name__ == '__main__':
     init_db()

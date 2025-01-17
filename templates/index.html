@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeador Emocional</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mapeador Emocional</h1>
+    <form action="/submit" method="post">
+        <input type="text" name="emotion" placeholder="Como você está se sentindo?" required>
+        <input type="text" name="latitude" placeholder="Latitude" required>
+        <input type="text" name="longitude" placeholder="Longitude" required>
+        <button type="submit">Enviar</button>
+    </form>
+
+    <h1>Mapa de Emoções</h1>
+    <div id="map"></div>
+    <a href="/emocoes">Ver todas as emoções</a><br>
+    <a href="/">Voltar para o início</a>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Inicializar o mapa
+        var map = L.map('map').setView([-23.55052, -46.633308], 10); // Coordenadas de São Paulo
+
+        // Adicionar o tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Receber dados dos marcadores passados pelo Flask
+        var markers = {{ markers | tojson | safe }};
+        markers.forEach(function(data) {
+            L.marker([data.latitude, data.longitude])
+             .addTo(map)
+             .bindPopup(data.emotion);
+        });
+    </script>
+</body>
+</html>

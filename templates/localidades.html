@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resumo das Emoções</title>
+    <title>Localidades dos Registros</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -13,8 +13,8 @@
             color: #333;
         }
         header {
-            background-color: #edebf0;
-            color: rgb(6, 6, 6);
+            background-color: #ebe8ee;
+            color: rgb(11, 10, 10);
             padding: 20px 0;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -30,15 +30,6 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .controls label {
-            font-weight: bold;
         }
         .chart-container {
             margin: 20px 0;
@@ -64,20 +55,11 @@
 </head>
 <body>
     <header>
-        <h1>Resumo das Emoções</h1>
+        <h1>Localidades dos Registros</h1>
     </header>
     <main>
-        <!-- Filtros de Linha do Tempo -->
-        <form method="get" action="/emocoes" class="controls">
-            <label for="start-date">Início:</label>
-            <input type="date" id="start-date" name="start_date">
-            <label for="end-date">Fim:</label>
-            <input type="date" id="end-date" name="end_date">
-            <button type="submit">Filtrar</button>
-        </form>
-
         <div class="chart-container">
-            <canvas id="emocaoChart" width="800" height="400"></canvas>
+            <canvas id="localidadesChart" width="800" height="400"></canvas>
         </div>
         <footer>
             <p><a href="/">Voltar ao início</a></p>
@@ -86,19 +68,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const records = {{ records | tojson | safe }};
-        const emotions = records.map(record => record[0]);
-        const counts = records.map(record => record[1]);
+        const labels = records.map(record => record[0]);
+        const data = records.map(record => record[1]);
 
-        const ctx = document.getElementById('emocaoChart').getContext('2d');
+        const ctx = document.getElementById('localidadesChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: emotions,
+                labels: labels,
                 datasets: [{
                     label: 'Quantidade de Registros',
-                    data: counts,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1
                 }]
             },

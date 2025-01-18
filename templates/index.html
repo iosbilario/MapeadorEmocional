@@ -10,24 +10,62 @@
             height: 600px;
             width: 100%;
         }
+        .emoji-icon {
+            font-size: 24px;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 <body>
-    <h1>Mapeador Emocional</h1>
-    <form action="/submit" method="post">
-        <input type="text" name="emotion" placeholder="Como você está se sentindo?" required>
-        <button type="button" id="getLocation">Usar Minha Localização</button>
+    <header style="text-align: center; margin-bottom: 20px;">
+        <h1>Mapeador Emocional</h1>
+    </header>
+    <form id="emotionForm" action="/submit" method="post" style="text-align: center; margin-bottom: 20px;">
+        <label for="emotion">Como você está se sentindo?</label>
+        <select name="emotion" id="emotion" required>
+            <option value="" disabled selected>Selecione...</option>
+            <optgroup label="Emoções Positivas">
+                <option value="😄 Feliz">😄 Feliz</option>
+                <option value="😌 Calmo">😌 Calmo</option>
+                <option value="🥰 Agradecido">🥰 Agradecido</option>
+                <option value="🤩 Entusiasmado">🤩 Entusiasmado</option>
+            </optgroup>
+            <optgroup label="Emoções Negativas">
+                <option value="😢 Triste">😢 Triste</option>
+                <option value="😡 Irritado">😡 Irritado</option>
+                <option value="😨 Ansioso">😨 Ansioso</option>
+                <option value="😭 Desesperado">😭 Desesperado</option>
+            </optgroup>
+            <optgroup label="Emoções Neutras">
+                <option value="🥱 Entediado">🥱 Entediado</option>
+                <option value="🤔 Pensativo">🤔 Pensativo</option>
+                <option value="😐 Indiferente">😐 Indiferente</option>
+            </optgroup>
+            <optgroup label="Emoções de Fadiga">
+                <option value="😴 Cansado">😴 Cansado</option>
+                <option value="🤯 Sobrecarregado">🤯 Sobrecarregado</option>
+            </optgroup>
+            <optgroup label="Emoções Sociais">
+                <option value="🥳 Celebrando">🥳 Celebrando</option>
+                <option value="😞 Rejeitado">😞 Rejeitado</option>
+                <option value="🫂 Solitário">🫂 Solitário</option>
+            </optgroup>
+        </select>        
         <input type="hidden" name="latitude" id="latitude">
         <input type="hidden" name="longitude" id="longitude">
         <button type="submit">Enviar</button>
     </form>
 
-    <h1>Mapa de Emoções</h1>
     <div id="map"></div>
-    <a href="/emocoes">Ver todas as emoções</a><br>
-    <a href="/">Voltar para o início</a>
+    <a href="/emocoes" style="display: block; text-align: center; margin-top: 20px;">Ver todas as emoções</a><br>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
     <script>
         var map = L.map('map').setView([-23.55052, -46.633308], 10);
 
@@ -36,34 +74,45 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
+        // Dados de marcadores e heatmap
         var markers = {{ markers | tojson | safe }};
+        var heatData = [];
+
         markers.forEach(function(data) {
-            L.marker([data.latitude, data.longitude])
-             .addTo(map)
-             .bindPopup(data.emotion);
+            // Criar ícone com apenas o emoji
+            var emojiIcon = L.divIcon({
+                className: 'emoji-icon',
+                html: data.emotion.trim().split(" ")[0], // Apenas o emoji
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+
+            // Adicionar marcador ao mapa
+            L.marker([data.latitude, data.longitude], { icon: emojiIcon }).addTo(map);
+
+            // Adicionar dados ao heatmap
+            heatData.push([data.latitude, data.longitude, 1]);
         });
 
-        document.getElementById('getLocation').addEventListener('click', function() {
+        // Adicionar heatmap ao mapa
+        L.heatLayer(heatData, { radius: 25 }).addTo(map);
+
+        // Captura a localização ao enviar o formulário
+        document.getElementById('emotionForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Impede o envio até que a localização seja capturada
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     document.getElementById('latitude').value = position.coords.latitude;
                     document.getElementById('longitude').value = position.coords.longitude;
-                    alert('Localização capturada com sucesso!');
+
+                    // Submete o formulário
+                    event.target.submit();
                 }, function(error) {
                     alert('Erro ao obter localização: ' + error.message);
                 });
             } else {
                 alert('Geolocalização não é suportada pelo navegador.');
-            }
-        });
-
-        document.querySelector('form').addEventListener('submit', function(event) {
-            const latitude = document.getElementById('latitude').value;
-            const longitude = document.getElementById('longitude').value;
-
-            if (!latitude || !longitude) {
-                event.preventDefault();
-                alert('Por favor, use o botão "Usar Minha Localização" antes de enviar.');
             }
         });
     </script>
